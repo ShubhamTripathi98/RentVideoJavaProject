@@ -9,14 +9,16 @@ version = '0.0.1-SNAPSHOT'
 description = 'RESTful API service for online video rental system'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
+	}
+	all {
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
 	}
 }
 
@@ -25,19 +27,54 @@ repositories {
 }
 
 dependencies {
+	// Spring Boot Starters
+	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
+
+	// Database
 	runtimeOnly 'com.mysql:mysql-connector-j'
+	implementation 'com.h2database:h2'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	// Test dependencies
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'com.h2database:h2'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
+test {
 	useJUnitPlatform()
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+		showStandardStreams = true
+	}
+}
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+	options.compilerArgs += [
+		'-Xlint:unchecked',
+		'-Xlint:deprecation',
+		'-parameters'
+	]
+}
+
+// Ensure Gradle uses enough memory
+tasks.withType(JavaCompile) {
+	options.fork = true
+	options.forkOptions.jvmArgs += ['-Xmx1g']
+}
+
+// Add a task to verify Lombok is working
+task verifyLombok(type: JavaCompile) {
+	source = sourceSets.main.java
+	classpath = configurations.compileClasspath
+	destinationDirectory = file("${buildDir}/tmp/verifyLombok")
+	options.compilerArgs += ['-proc:only']
 }

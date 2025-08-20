@@ -1,1 +1,8 @@
 rootProject.name = 'rentvideo'
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google()
+    }
+}
